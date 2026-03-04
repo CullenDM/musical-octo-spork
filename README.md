@@ -79,17 +79,31 @@ with maybe_autocast(tuning):
 
 Yes — benchmark here means comparing **naive/reference PyTorch** vs the optimized kernel path and sweeping tuning knobs.
 
-Run:
+Recommended run for training-representative numbers:
+
+```bash
+python benchmarks/autotune_peer_grkan.py --device cuda --backend auto --shape-sweep t4_train --skip-naive --save-profile profiles/t4-auto.json
+```
+
+Single-shape (legacy) run:
 
 ```bash
 python benchmarks/autotune_peer_grkan.py --device cuda --backend auto --save-profile profiles/t4-auto.json
 ```
 
 This reports:
-- naive latency,
+- optional naive latency (`--skip-naive` disables it for large sweeps),
+- vectorized torch baseline latency (`vectorized_torch_latency_s`),
 - best optimized latency over (`moe_chunk_size`, `unique_compression_min_k_tokens`) sweep,
-- speedup vs naive,
-- full sweep table as JSON.
+- speedup vs naive and speedup vs vectorized torch,
+- dispatch telemetry proof fields sampled post-run:
+  - `telemetry.backend_used_counts`
+  - `telemetry.reason_counts`
+- per-shape rows under `per_shape[*]` when using `--shape-sweep t4_train`.
+
+To verify Triton usage for the best config, inspect:
+
+`per_shape[*].best.telemetry.backend_used_counts`
 
 
 ## Compile/autocast observability
