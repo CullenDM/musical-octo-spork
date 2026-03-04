@@ -62,7 +62,7 @@ with maybe_autocast(tuning):
         step_idx=recursion_step,
         rat_delta=block_rat_delta,           # optional [G,5]
         step_rat_delta=block_step_rat_delta, # optional [S,G,5]
-        dispatch_backend="auto",            # torch|triton|triton_fused|auto (inspect telemetry below)
+        dispatch_backend="auto",            # torch|triton|triton_fused|auto
         eps=cfg.eps,
     )
 ```
@@ -82,15 +82,13 @@ Yes — benchmark here means comparing **naive/reference PyTorch** vs the optimi
 Run:
 
 ```bash
-python benchmarks/autotune_peer_grkan.py --device cuda --backend auto --shape-sweep t4_train --save-profile profiles/t4-auto.json
+python benchmarks/autotune_peer_grkan.py --device cuda --backend auto --save-profile profiles/t4-auto.json
 ```
 
-This reports (per-shape):
-- naive latency (optional, can be skipped with `--skip-naive`),
-- a stronger vectorized torch baseline latency,
+This reports:
+- naive latency,
 - best optimized latency over (`moe_chunk_size`, `unique_compression_min_k_tokens`) sweep,
-- speedup vs vectorized torch and vs naive,
-- dispatch telemetry summaries (`backend_used_counts`, reasons) proving whether Triton was actually used under `--backend auto`,
+- speedup vs naive,
 - full sweep table as JSON.
 
 
@@ -132,12 +130,8 @@ The unit suite includes CUDA-gated tests that run when CUDA is available to veri
 Use a saved profile to re-run only the selected config:
 
 ```bash
-python benchmarks/autotune_peer_grkan.py --device cuda --backend auto --shape-sweep single --load-profile profiles/t4-auto.json
+python benchmarks/autotune_peer_grkan.py --device cuda --backend auto --load-profile profiles/t4-auto.json
 ```
-
-To quickly inspect whether `auto` hit Triton in your environment, check:
-- `per_shape[*].best.telemetry.backend_used_counts`
-- `per_shape[*].best.telemetry.reason_counts`
 
 You can load and apply saved profiles in training code with:
 - `load_autotune_profile(path)`
